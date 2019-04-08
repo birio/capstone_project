@@ -10,10 +10,8 @@ class Dut:
 
    def compute_reward_comb(self, comb_covered):
        reward_comb = 0
-       for i in range (self.n_states):
-          for j in range (self.n_states):
-             if(self.comb_covered[i][j] == 1):
-                reward_comb = reward_comb + 1
+       for key, items in self.comb_covered.items():
+          reward_comb = reward_comb + items
        return reward_comb
 
    def compute_reward(self, states_covered, comb_covered):
@@ -32,12 +30,12 @@ class Dut:
    def __init__(self, n_states, n_inputs):
       seed = 42
       np.random.seed(seed)
-      max_adj_states = np.random.random_integers(n_states) # max number of adjacent states for each state
+      max_adj_states = np.random.random_integers(min(n_inputs, n_states)-1) # max number of adjacent states for each state
       
       self.DUT = {} # dictioary adjacent list
-      self.COMB = [[None for i in range(n_states)] for j in range(n_states)]
+      self.COMB = {} # dictionary of combinatory path between states
       self.states_covered = [0 for i in range(n_states)]
-      self.comb_covered   = [["-" for i in range(n_states)] for j in range(n_states)]
+      self.comb_covered   = {}
       self.n_comb = 0
       self.n_states = n_states
       self.all_states_s = set()
@@ -47,15 +45,18 @@ class Dut:
       for s in range(1, n_states):
          if s not in self.all_states_s:
             rnd_state = np.random.choice(list(self.all_states_s))
-            self.DUT.update({rnd_state : [s]})
+            rnd_state_items = [s]
+            if rnd_state in self.DUT.keys():
+               rnd_state_items = np.unique(np.append(rnd_state_items, self.DUT[rnd_state]))
+            self.DUT.update({rnd_state : rnd_state_items})
          self.add_adj_list(max_adj_states, s)
-      
+     
       for key, items in self.DUT.items():
-         for i in range(n_states):
-            if i in items:
-               self.COMB[key][i]=np.random.random_integers(n_inputs)
-               self.comb_covered[key][i] = 0
-               self.n_comb = self.n_comb + 1
+         rnd_actions_l = np.random.choice(n_inputs, len(self.DUT[key]), replace=False)
+         for i in range(len(items)):
+            self.COMB.update({ (key, items[i]) : rnd_actions_l[i] })
+            self.comb_covered.update({ (key, items[i]) : 0 })
+            self.n_comb = self.n_comb + 1
 
       assert len(self.all_states_s) == self.n_states , "len(all_states_s) is " % len(self.all_states_s)
 
@@ -74,9 +75,9 @@ class Dut:
       state_array = self.DUT[state]
       next_state = state
       for i in state_array:
-         if self.COMB[state][i]==action:
+         if self.COMB[(state, i)] == action:
             self.states_covered[i]=1
-            self.comb_covered[state][i]=1
+            self.comb_covered.update({(state, i): 1})
             next_state = i
             break
       reward = self.compute_reward(self.states_covered, self.comb_covered)
@@ -86,10 +87,7 @@ class Dut:
    def reset(self, do_merge):
       if not do_merge:
          self.states_covered = [0 for i in range(self.n_states)]
-         self.comb_covered   = [["-" for i in range(self.n_states)] for j in range(self.n_states)]
-         for i in range (self.n_states):
-            for j in range (self.n_states):
-               if(self.COMB[i][j] != None):
-                  self.comb_covered[i][j] = 0
+         for key, items in self.comb_covered.items():
+            self.comb_covered.update({key: 0})
       return 0;
    

@@ -18,7 +18,8 @@ for config in CONFIGS:
    DO_MERGE = config[0] 
    N_INPUTS = config[1] 
    N_STATES = config[2] 
-   
+  
+ 
    num_episodes = 1000
    t_max        =  500
    
@@ -31,26 +32,27 @@ for config in CONFIGS:
    
    dut = Dut(N_STATES, N_INPUTS)
    
-   for i_episode in range(num_episodes):
+   for i_episode in range(1, num_episodes+1):
        n_comb = dut.n_comb
        state = dut.reset(DO_MERGE)
        step = 1
-       while step <= t_max:
+       done = False
+       while step <= t_max and not done:
            episode_states.append(state)
            # apply random stimuli
-           action = int((2**N_INPUTS)*np.random.random())
+           action = int((N_INPUTS)*np.random.random())
            next_state, reward, done = dut.step(state, action)
            state = next_state
+           step = step + 1
            if done or (step == t_max):
               print_stats.print_episode(i_episode, reward, n_comb, N_STATES, str_config)
               rewards_l.append(reward)
               if reward > best_reward:
                  best_reward = reward
                  best_episode_states = episode_states
-           step = step + 1
    
    print_stats.print_stats(dut, N_STATES, best_reward, best_episode_states)
-   # plt.plot(rewards_l)
+   plt.plot(rewards_l)
    png_config = 'rewards_' + print_stats.clean_str_config(str_config) + '.png'
    plt.savefig(png_config)
 
