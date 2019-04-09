@@ -1,18 +1,10 @@
-""" 
-Implementation of DDPG - Deep Deterministic Policy Gradient
+from Dut import Dut
+import matplotlib.pyplot as plt
+import pdb
+import print_stats
 
-Algorithm and hyperparameter details can be found here: 
-    http://arxiv.org/pdf/1509.02971v2.pdf
-
-The algorithm is tested on the Pendulum-v0 OpenAI gym task 
-and developed with tflearn + Tensorflow
-
-Author: Patrick Emami
-"""
 import tensorflow as tf
 import numpy as np
-import gym
-from gym import wrappers
 import tflearn
 import argparse
 import pprint as pp
@@ -87,7 +79,7 @@ class ActorNetwork(object):
         out = tflearn.fully_connected(
             net, self.a_dim, activation='tanh', weights_init=w_init)
         # Scale output to -action_bound to action_bound
-        scaled_out = tf.multiply(out, self.action_bound)
+        scaled_out = (self.action_bound/2) + tf.multiply(out, self.action_bound/2) # TODO
         return inputs, out, scaled_out
 
     def train(self, inputs, a_gradient):
@@ -251,7 +243,7 @@ def build_summaries():
 #   Agent Training
 # ===========================
 
-def train(sess, env, args, actor, critic, actor_noise):
+def train(sess, dut, args, actor, critic, actor_noise, do_merge, n_inputs, n_states):
 
     # Set up summary Ops
     summary_ops, summary_vars = build_summaries()
@@ -266,6 +258,7 @@ def train(sess, env, args, actor, critic, actor_noise):
     # Initialize replay memory
     replay_buffer = ReplayBuffer(int(args['buffer_size']), int(args['random_seed']))
 
+    # REVISIT
     # Needed to enable BatchNorm. 
     # This hurts the performance on Pendulum but could be useful
     # in other environments.
@@ -273,21 +266,23 @@ def train(sess, env, args, actor, critic, actor_noise):
 
     for i in range(int(args['max_episodes'])):
 
-        s = env.reset()
+        n_comb = dut.n_comb
+        s = dut.reset(do_merge)
 
         ep_reward = 0
         ep_ave_max_q = 0
 
-        for j in range(int(args['max_episode_len'])):
+        best_episode_states = []
+        episode_states = []
 
-            if args['render_env']:
-                env.render()
+        for j in range(int(args['max_episode_len'])):
+            episode_states.append(s)
 
             # Added exploration noise
             #a = actor.predict(np.reshape(s, (1, 3))) + (1. / (1. + i))
             a = actor.predict(np.reshape(s, (1, actor.s_dim))) + actor_noise()
 
-            s2, r, terminal, info = env.step(a[0])
+            s2, r, terminal = dut.step(s, a)
 
             replay_buffer.add(np.reshape(s, (actor.s_dim,)), np.reshape(a, (actor.a_dim,)), r,
                               terminal, np.reshape(s2, (actor.s_dim,)))
@@ -300,7 +295,7 @@ def train(sess, env, args, actor, critic, actor_noise):
 
                 # Calculate targets
                 target_q = critic.predict_target(
-                    s2_batch, actor.predict_target(s2_batch))
+                    s2_batch, actor.predict_target(s2_batch)) #REVISIT
 
                 y_i = []
                 for k in range(int(args['minibatch_size'])):
@@ -345,16 +340,20 @@ def main(args):
 
     with tf.Session() as sess:
 
-        env = gym.make(args['env'])
+        # TODO: for configs
+        DO_MERGE = True
+        N_INPUTS = 8
+        N_STATES = 32
+
+        dut = Dut(N_STATES, N_INPUTS)
         np.random.seed(int(args['random_seed']))
         tf.set_random_seed(int(args['random_seed']))
-        env.seed(int(args['random_seed']))
 
-        state_dim = env.observation_space.shape[0]
-        action_dim = env.action_space.shape[0]
-        action_bound = env.action_space.high
+        state_dim = 1
+        action_dim = 1
+        action_bound = 2**N_INPUTS
         # Ensure action bound is symmetric
-        assert (env.action_space.high == -env.action_space.low)
+        # assert (env.action_space.high == -env.action_space.low)
 
         actor = ActorNetwork(sess, state_dim, action_dim, action_bound,
                              float(args['actor_lr']), float(args['tau']),
@@ -367,17 +366,7 @@ def main(args):
         
         actor_noise = OrnsteinUhlenbeckActionNoise(mu=np.zeros(action_dim))
 
-        if args['use_gym_monitor']:
-            if not args['render_env']:
-                env = wrappers.Monitor(
-                    env, args['monitor_dir'], video_callable=False, force=True)
-            else:
-                env = wrappers.Monitor(env, args['monitor_dir'], force=True)
-
-        train(sess, env, args, actor, critic, actor_noise)
-
-        if args['use_gym_monitor']:
-            env.monitor.close()
+        train(sess, dut, args, actor, critic, actor_noise, DO_MERGE, N_INPUTS, N_STATES)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='provide arguments for DDPG agent')
@@ -391,20 +380,15 @@ if __name__ == '__main__':
     parser.add_argument('--minibatch-size', help='size of minibatch for minibatch-SGD', default=64)
 
     # run parameters
-    parser.add_argument('--env', help='choose the gym env- tested on {Pendulum-v0}', default='Pendulum-v0')
-    parser.add_argument('--random-seed', help='random seed for repeatability', default=1234)
-    parser.add_argument('--max-episodes', help='max num of episodes to do while training', default=50000)
-    parser.add_argument('--max-episode-len', help='max length of 1 episode', default=1000)
-    parser.add_argument('--render-env', help='render the gym env', action='store_true')
-    parser.add_argument('--use-gym-monitor', help='record gym results', action='store_true')
-    parser.add_argument('--monitor-dir', help='directory for storing gym results', default='./results/gym_ddpg')
+    parser.add_argument('--random-seed', help='random seed for repeatability', default=42)
+    parser.add_argument('--max-episodes', help='max num of episodes to do while training', default=1000)
+    parser.add_argument('--max-episode-len', help='max length of 1 episode', default=500)
     parser.add_argument('--summary-dir', help='directory for storing tensorboard info', default='./results/tf_ddpg')
 
-    parser.set_defaults(render_env=False)
-    parser.set_defaults(use_gym_monitor=True)
-    
     args = vars(parser.parse_args())
     
     pp.pprint(args)
 
     main(args)
+
+    # TODO prints and stats
