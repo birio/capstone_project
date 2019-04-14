@@ -71,7 +71,8 @@ class Dut:
       
 
    # next_state, reward, done = dut.step(state, action)
-   def step(self, state, action):
+   def step(self, state, action, j):
+      # pdb.set_trace()
       state_array = self.DUT[state]
       next_state = state
       for i in state_array:
@@ -81,7 +82,7 @@ class Dut:
             next_state = i
             break
       reward = self.compute_reward(self.states_covered, self.comb_covered)
-      done   = (reward == 1)
+      done   = (reward == 1) or (j == 499)
       return (next_state, reward, done)
 
    def reset(self, do_merge):
