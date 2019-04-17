@@ -280,9 +280,15 @@ def train(sess, dut, args, actor, critic, actor_noise, do_merge, n_inputs, n_sta
 
             # Added exploration noise
             #a = actor.predict(np.reshape(s, (1, 3))) + (1. / (1. + i))
-            a = actor.predict(np.reshape(s, (1, actor.s_dim))) + actor_noise()
+            # TODO add integer noise
+            # a = actor.predict(np.reshape(s, (1, actor.s_dim))) + actor_noise()
+            a = np.round(actor.predict(np.reshape(s, (1, actor.s_dim))) + actor_noise()) # TODO
+            if (a>=8):
+               a=7
+            if (a<0):
+               a=0
 
-            s2, r, terminal = dut.step(s, a)
+            s2, r, terminal = dut.step(s, a, j)
 
             replay_buffer.add(np.reshape(s, (actor.s_dim,)), np.reshape(a, (actor.a_dim,)), r,
                               terminal, np.reshape(s2, (actor.s_dim,)))
