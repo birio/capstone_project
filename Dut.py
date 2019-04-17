@@ -15,8 +15,8 @@ class Dut:
        return reward_comb
 
    def compute_reward(self, states_covered, comb_covered):
-       reward = (self.compute_reward_states(states_covered) + self.compute_reward_comb(comb_covered))/(self.n_comb + self.n_states)
-       return reward
+       coverage = (self.compute_reward_states(states_covered) + self.compute_reward_comb(comb_covered))/(self.n_comb + self.n_states)
+       return coverage
 
    def add_adj_list(self, max_adj_states, state):
        adj_states = np.random.random_integers(max_adj_states)
@@ -62,10 +62,10 @@ class Dut:
 
       assert len(self.all_states_s) == self.n_states , "len(all_states_s) is " % len(self.all_states_s)
 
-      tot_coverage = len(self.states_covered)
+      self.tot_coverage = len(self.states_covered)
       for key, items in self.comb_covered.items():
-          tot_coverage = tot_coverage + 1
-      print("tot_coverage = ", tot_coverage)
+          self.tot_coverage = self.tot_coverage + 1
+      print("tot_coverage = ", self.tot_coverage)
 
 
       # self.classes_f = open("classes.dat", "w")
@@ -79,20 +79,22 @@ class Dut:
       
 
    # next_state, reward, done = dut.step(state, action)
-   def step(self, state, action, j):
+
+   def step(self, state, action):
       state_array = self.DUT[state]
       next_state = state
+      reward = -0.1
       for i in state_array:
          if self.COMB[(state, i)] == action:
             self.states_covered[i]=1
-            self.comb_covered.update({(state, i): 1})
+            reward = 0.1
+            if (self.comb_covered[(state, i)] == 0):
+               reward = 1
+               self.comb_covered.update({(state, i): 1})
             next_state = i
             break
-      # TODO define better reward
-      comp_reward = self.compute_reward(self.states_covered, self.comb_covered)
-      reward = comp_reward - self.coverage
-      self.coverage = comp_reward
-      done   = (reward == 1) or (j == 499)
+      self.coverage = self.compute_reward(self.states_covered, self.comb_covered)
+      done          = (self.coverage == 1)
       return (next_state, reward, done)
 
    def reset(self, do_merge):
