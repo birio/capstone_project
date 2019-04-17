@@ -38,7 +38,9 @@ class Dut:
       self.comb_covered   = {}
       self.n_comb = 0
       self.n_states = n_states
+      self.n_inputs = n_inputs
       self.all_states_s = set()
+      self.coverage = 0
 
       s = 0
       self.add_adj_list(max_adj_states, s)
@@ -60,6 +62,12 @@ class Dut:
 
       assert len(self.all_states_s) == self.n_states , "len(all_states_s) is " % len(self.all_states_s)
 
+      tot_coverage = len(self.states_covered)
+      for key, items in self.comb_covered.items():
+          tot_coverage = tot_coverage + 1
+      print("tot_coverage = ", tot_coverage)
+
+
       # self.classes_f = open("classes.dat", "w")
       # with open("classes.dat") as classes_f:
       #    self.classes_f.write("n_states = %s\n" % repr(self.n_states))
@@ -72,7 +80,6 @@ class Dut:
 
    # next_state, reward, done = dut.step(state, action)
    def step(self, state, action, j):
-      # pdb.set_trace()
       state_array = self.DUT[state]
       next_state = state
       for i in state_array:
@@ -81,11 +88,15 @@ class Dut:
             self.comb_covered.update({(state, i): 1})
             next_state = i
             break
-      reward = self.compute_reward(self.states_covered, self.comb_covered)
+      # TODO define better reward
+      comp_reward = self.compute_reward(self.states_covered, self.comb_covered)
+      reward = comp_reward - self.coverage
+      self.coverage = comp_reward
       done   = (reward == 1) or (j == 499)
       return (next_state, reward, done)
 
    def reset(self, do_merge):
+      self.coverage = 0
       if not do_merge:
          self.states_covered = [0 for i in range(self.n_states)]
          for key, items in self.comb_covered.items():
