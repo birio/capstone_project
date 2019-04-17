@@ -244,7 +244,7 @@ def build_summaries():
 #   Agent Training
 # ===========================
 
-def train(sess, dut, args, actor, critic, actor_noise, do_merge, n_inputs, n_states):
+def train(sess, dut, args, actor, critic, actor_noise, do_merge, n_inputs, n_states, k_nearest_neighbors):
 
     # Set up summary Ops
     summary_ops, summary_vars = build_summaries()
@@ -278,16 +278,21 @@ def train(sess, dut, args, actor, critic, actor_noise, do_merge, n_inputs, n_sta
         for j in range(int(args['max_episode_len'])):
             episode_states.append(s)
 
-            # Added exploration noise
-            #a = actor.predict(np.reshape(s, (1, 3))) + (1. / (1. + i))
             # TODO add integer noise
-            # TODO actor-critic with integer action
-            # a = actor.predict(np.reshape(s, (1, actor.s_dim))) + actor_noise()
-            a = np.round(actor.predict(np.reshape(s, (1, actor.s_dim))) + actor_noise()) # TODO
-            if (a>=8):
-               a=7
-            if (a<0):
-               a=0
+            proto_action = actor.predict(np.reshape(s, (1, actor.s_dim)))
+            # get the proto_action's k nearest neighbors
+            # actions = self.action_space.search_point(proto_action, k_nearest_neighbors)[0] # TODO efficient knn : closest in value, or in probability to being chosen?
+
+
+            actions = np.round(proto_action)
+            # self.data_fetch.set_ndn_action(actions[0].tolist()) # todo
+            # make all the state, action pairs for the critic
+            states = np.tile(s, [len(actions), 1])
+            # evaluate each pair through the critic
+            actions_evaluation = critic.predict_target(states, actions)
+            # find the index of the pair with the maximum value
+            max_index = np.argmax(actions_evaluation)
+            a = actions[max_index]
 
             s2, r, terminal = dut.step(s, a)
 
@@ -354,6 +359,9 @@ def main(args):
         DO_MERGE = False
         N_INPUTS = 8
         N_STATES = 32
+        k_ratio  = 0.1 # REVISIT
+
+        k_nearest_neighbors = max(1, int(N_INPUTS * k_ratio))
 
         dut = Dut(N_STATES, N_INPUTS)
         np.random.seed(int(args['random_seed']))
@@ -376,7 +384,7 @@ def main(args):
         
         actor_noise = OrnsteinUhlenbeckActionNoise(mu=np.zeros(action_dim))
 
-        train(sess, dut, args, actor, critic, actor_noise, DO_MERGE, N_INPUTS, N_STATES)
+        train(sess, dut, args, actor, critic, actor_noise, DO_MERGE, N_INPUTS, N_STATES, k_nearest_neighbors)
 
     print(dut.states_covered)
     print(dut.comb_covered)
