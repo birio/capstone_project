@@ -78,8 +78,9 @@ class ActorNetwork(object):
         w_init = tflearn.initializations.uniform(minval=-0.003, maxval=0.003)
         out = tflearn.fully_connected(
             net, self.a_dim, activation='tanh', weights_init=w_init)
-        # Scale output to -action_bound to action_bound
-        scaled_out = (self.action_bound/2) + tf.multiply(out, self.action_bound/2) # TODO
+        # Scale output to 0 to action_bound-1
+        # scaled_out = tflearn.fully_connected(out, self.action_bound, activation="softmax")
+        scaled_out = ((self.action_bound-1)/2) + tf.multiply(out, (self.action_bound-1)/2) # TODO
         return inputs, out, scaled_out
 
     def train(self, inputs, a_gradient):
@@ -258,7 +259,6 @@ def train(sess, dut, args, actor, critic, actor_noise, do_merge, n_inputs, n_sta
     # Initialize replay memory
     replay_buffer = ReplayBuffer(int(args['buffer_size']), int(args['random_seed']))
 
-    # REVISIT
     # Needed to enable BatchNorm. 
     # This hurts the performance on Pendulum but could be useful
     # in other environments.
