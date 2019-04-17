@@ -330,6 +330,7 @@ def train(sess, dut, args, actor, critic, actor_noise, do_merge, n_inputs, n_sta
 
             if terminal:
 
+                # TODO
                 summary_str = sess.run(summary_ops, feed_dict={
                     summary_vars[0]: ep_reward,
                     summary_vars[1]: ep_ave_max_q / float(j)
@@ -338,7 +339,7 @@ def train(sess, dut, args, actor, critic, actor_noise, do_merge, n_inputs, n_sta
                 writer.add_summary(summary_str, i)
                 writer.flush()
 
-                print('| Reward: {:d} | Episode: {:d} | Qmax: {:.4f}'.format(int(ep_reward), \
+                print('| Reward: {:.4f} | Episode: {:d} | Qmax: {:.4f}'.format(ep_reward, \
                         i, (ep_ave_max_q / float(j))))
                 break
 
@@ -347,7 +348,7 @@ def main(args):
     with tf.Session() as sess:
 
         # TODO: for configs
-        DO_MERGE = True
+        DO_MERGE = False
         N_INPUTS = 8
         N_STATES = 32
 
@@ -357,7 +358,7 @@ def main(args):
 
         state_dim = 1
         action_dim = 1
-        action_bound = 2**N_INPUTS
+        action_bound = N_INPUTS
         # Ensure action bound is symmetric
         # assert (env.action_space.high == -env.action_space.low)
 
@@ -373,6 +374,11 @@ def main(args):
         actor_noise = OrnsteinUhlenbeckActionNoise(mu=np.zeros(action_dim))
 
         train(sess, dut, args, actor, critic, actor_noise, DO_MERGE, N_INPUTS, N_STATES)
+
+    print(dut.states_covered)
+    print(dut.comb_covered)
+    print(dut.DUT)
+    print(dut.COMB)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='provide arguments for DDPG agent')
