@@ -80,7 +80,7 @@ class ActorNetwork(object):
             net, self.a_dim, activation='tanh', weights_init=w_init)
         # Scale output to 0 to action_bound-1
         # scaled_out = tflearn.fully_connected(out, self.action_bound, activation="softmax")
-        scaled_out = ((self.action_bound-1)/2) + tf.multiply(out, (self.action_bound-1)/2) # TODO
+        scaled_out = ((self.action_bound-1)/2) + tf.multiply(out, (self.action_bound-1)/2)
         return inputs, out, scaled_out
 
     def train(self, inputs, a_gradient):
@@ -281,6 +281,7 @@ def train(sess, dut, args, actor, critic, actor_noise, do_merge, n_inputs, n_sta
             # Added exploration noise
             #a = actor.predict(np.reshape(s, (1, 3))) + (1. / (1. + i))
             # TODO add integer noise
+            # TODO actor-critic with integer action
             # a = actor.predict(np.reshape(s, (1, actor.s_dim))) + actor_noise()
             a = np.round(actor.predict(np.reshape(s, (1, actor.s_dim))) + actor_noise()) # TODO
             if (a>=8):
@@ -288,7 +289,7 @@ def train(sess, dut, args, actor, critic, actor_noise, do_merge, n_inputs, n_sta
             if (a<0):
                a=0
 
-            s2, r, terminal = dut.step(s, a, j)
+            s2, r, terminal = dut.step(s, a)
 
             replay_buffer.add(np.reshape(s, (actor.s_dim,)), np.reshape(a, (actor.a_dim,)), r,
                               terminal, np.reshape(s2, (actor.s_dim,)))
@@ -328,9 +329,9 @@ def train(sess, dut, args, actor, critic, actor_noise, do_merge, n_inputs, n_sta
             s = s2
             ep_reward += r
 
-            if terminal:
+            if ( terminal or (j == (int(args['max_episode_len'])-1)) ):
 
-                # TODO
+                # REVISIT
                 summary_str = sess.run(summary_ops, feed_dict={
                     summary_vars[0]: ep_reward,
                     summary_vars[1]: ep_ave_max_q / float(j)
@@ -339,9 +340,11 @@ def train(sess, dut, args, actor, critic, actor_noise, do_merge, n_inputs, n_sta
                 writer.add_summary(summary_str, i)
                 writer.flush()
 
-                print('| Reward: {:.4f} | Episode: {:d} | Qmax: {:.4f}'.format(ep_reward, \
+                print('| Coverage: {:.4f} ({:d}/{:d}) | Reward: {:.4f} | Episode: {:d} | Qmax: {:.4f}'.format(dut.coverage, int(dut.coverage*dut.tot_coverage), dut.tot_coverage, ep_reward, \
                         i, (ep_ave_max_q / float(j))))
                 break
+
+# TODO whats the meaning of Qmax?
 
 def main(args):
 
