@@ -414,4 +414,9 @@ if __name__ == '__main__':
 
     main(args)
 
-    # TODO prints and stats
+    # TODO prints and statsa
+ 
+    # TODO Q    values are initialized to zero
+    # TODO put coverage in NN
+    # TODO RNN
+    # TODO print actions variance per episode
