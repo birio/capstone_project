@@ -10,4 +10,9 @@ https://www.bons.ai/blog/reward-functions-reinforcement-learning-video
 Ornstein Uhlenbeck Action Noise
 https://www.quora.com/Why-do-we-use-the-Ornstein-Uhlenbeck-Process-in-the-exploration-of-DDPG
 
+stochastic actor-critic
+http://www-personal.umich.edu/~shangw/sa3c2018.pdf
+https://hal.archives-ouvertes.fr/hal-00756747/document
+https://yanpanlau.github.io/2016/10/11/Torcs-Keras.html
+https://arxiv.org/pdf/1706.01905.pdf
 
