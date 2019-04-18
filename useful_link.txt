@@ -1,0 +1,13 @@
+wolpertinger
+https://github.com/jimkon/Deep-Reinforcement-Learning-in-Large-Discrete-Action-Spaces
+
+reward function definition
+//www.researchgate.net/post/What_is_the_best_Reward_function_in_Reinforcement_Learning
+https://stats.stackexchange.com/questions/189067/how-to-make-a-reward-function-in-reinforcement-learning
+https://medium.com/@BonsaiAI/deep-reinforcement-learning-models-tips-tricks-for-writing-reward-functions-a84fe525e8e0
+https://www.bons.ai/blog/reward-functions-reinforcement-learning-video
+
+Ornstein Uhlenbeck Action Noise
+https://www.quora.com/Why-do-we-use-the-Ornstein-Uhlenbeck-Process-in-the-exploration-of-DDPG
+
+
