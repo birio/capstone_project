@@ -83,10 +83,12 @@ class Dut:
    def step(self, state, action):
       state_array = self.DUT[state]
       next_state = state
+      # reward = -1
       reward = -0.1
       for i in state_array:
          if self.COMB[(state, i)] == action:
             self.states_covered[i]=1
+            # reward = 0.1
             reward = 1
             if (self.comb_covered[(state, i)] == 0):
                self.comb_covered.update({(state, i): 1})

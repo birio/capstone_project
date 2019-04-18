@@ -278,11 +278,16 @@ def train(sess, dut, args, actor, critic, actor_noise, do_merge, n_inputs, n_sta
         for j in range(int(args['max_episode_len'])):
             episode_states.append(s)
 
-            # TODO add integer noise
-            proto_action = actor.predict(np.reshape(s, (1, actor.s_dim)))
             # get the proto_action's k nearest neighbors
             # actions = self.action_space.search_point(proto_action, k_nearest_neighbors)[0] # TODO efficient knn : closest in value, or in probability to being chosen?
 
+            # REVISIT is it ok?
+            rnd_action = np.random.choice(np.arange(n_inputs))
+            eps = 1./(1+(float(args['max_episode_len'])*i + j)/250000)
+            if (np.random.random() < eps):
+               proto_action = np.array([[rnd_action]])
+            else:
+               proto_action = actor.predict(np.reshape(s, (1, actor.s_dim)))
 
             actions = np.round(proto_action)
             # self.data_fetch.set_ndn_action(actions[0].tolist()) # todo
@@ -420,3 +425,5 @@ if __name__ == '__main__':
     # TODO put coverage in NN
     # TODO RNN
     # TODO print actions variance per episode
+    # TODO reward: hidden state
+    # TODO reward: big end reward
