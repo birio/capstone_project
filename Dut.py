@@ -87,11 +87,10 @@ class Dut:
       for i in state_array:
          if self.COMB[(state, i)] == action:
             self.states_covered[i]=1
-            reward = 0
+            reward = 1
             if (self.comb_covered[(state, i)] == 0):
                self.comb_covered.update({(state, i): 1})
                self.coverage = self.compute_reward(self.states_covered, self.comb_covered)
-               reward = self.coverage
             next_state = i
             break
       done          = (self.coverage == 1)
