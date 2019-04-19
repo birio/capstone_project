@@ -56,8 +56,12 @@ class Dut:
       for key, items in self.DUT.items():
          rnd_actions_l = np.random.choice(n_inputs, len(self.DUT[key]), replace=False)
          for i in range(len(items)):
-            self.COMB.update({ (key, items[i]) : rnd_actions_l[i] })
-            self.comb_covered.update({ (key, items[i]) : 0 })
+            if (key <= items[i]):
+               self.COMB.update({ (key, items[i]) : rnd_actions_l[i] })
+               self.comb_covered.update({ (key, items[i]) : 0 })
+            else:
+               self.COMB.update({ (items[i], key) : rnd_actions_l[i] })
+               self.comb_covered.update({ (items[i], key) : 0 })
             self.n_comb = self.n_comb + 1
 
       assert len(self.all_states_s) == self.n_states , "len(all_states_s) is " % len(self.all_states_s)
@@ -86,16 +90,21 @@ class Dut:
       # reward = -1
       reward = -0.1
       for i in state_array:
-         if self.COMB[(state, i)] == action:
+         if (((state <= i) and (self.COMB[(state, i)] == action)) or ((state > i) and (self.COMB[(i, state)] == action))) :
             self.states_covered[i]=1
             # reward = 0.1
             reward = 1
-            if (self.comb_covered[(state, i)] == 0):
-               self.comb_covered.update({(state, i): 1})
-               self.coverage = self.compute_reward(self.states_covered, self.comb_covered)
+            if(state <= i):
+               if (self.comb_covered[(state, i)] == 0):
+                  self.comb_covered.update({(state, i): 1})
+                  self.coverage = self.compute_reward(self.states_covered, self.comb_covered)
+            else:
+               if (self.comb_covered[(i, state)] == 0):
+                  self.comb_covered.update({(i, state): 1})
+                  self.coverage = self.compute_reward(self.states_covered, self.comb_covered)
             next_state = i
             break
-      done          = (self.coverage == 1)
+      done = (self.coverage == 1)
       return (next_state, reward, done)
 
    def reset(self, do_merge):
