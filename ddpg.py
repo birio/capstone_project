@@ -79,8 +79,8 @@ class ActorNetwork(object):
         out = tflearn.fully_connected(
             net, self.a_dim, activation='tanh', weights_init=w_init)
         # Scale output to 0 to action_bound-1
-        # scaled_out = tflearn.fully_connected(out, self.action_bound, activation="softmax")
-        scaled_out = ((self.action_bound-1)/2) + tf.multiply(out, (self.action_bound-1)/2)
+        scaled_out = tflearn.fully_connected(out, self.action_bound, activation="softmax")
+        # scaled_out = ((self.action_bound-1)/2) + tf.multiply(out, (self.action_bound-1)/2)
         return inputs, out, scaled_out
 
     def train(self, inputs, a_gradient):
@@ -287,7 +287,7 @@ def train(sess, dut, args, actor, critic, actor_noise, do_merge, n_inputs, n_sta
             if (np.random.random() < eps):
                proto_action = np.array([[rnd_action]])
             else:
-               proto_action = actor.predict(np.reshape(s, (1, actor.s_dim)))
+               proto_action = np.array([[np.argmax(actor.predict( np.reshape(s, (1, actor.s_dim))) )]])
 
             actions = np.round(proto_action)
             # self.data_fetch.set_ndn_action(actions[0].tolist()) # todo
@@ -312,7 +312,7 @@ def train(sess, dut, args, actor, critic, actor_noise, do_merge, n_inputs, n_sta
 
                 # Calculate targets
                 target_q = critic.predict_target(
-                    s2_batch, actor.predict_target(s2_batch)) #REVISIT
+                    s2_batch, np.array([[np.argmax(actor.predict_target(s2_batch))]]) ) #REVISIT
 
                 y_i = []
                 for k in range(int(args['minibatch_size'])):
@@ -329,7 +329,7 @@ def train(sess, dut, args, actor, critic, actor_noise, do_merge, n_inputs, n_sta
 
                 # Update the actor policy using the sampled gradient
                 a_outs = actor.predict(s_batch)
-                grads = critic.action_gradients(s_batch, a_outs)
+                grads = critic.action_gradients(s_batch, np.array([[np.argmax(a_outs)]]))
                 actor.train(s_batch, grads[0])
 
                 # Update target networks
@@ -427,3 +427,4 @@ if __name__ == '__main__':
     # TODO print actions variance per episode
     # TODO reward: hidden state
     # TODO reward: big end reward
+    # TODO what if Qmax explose?
