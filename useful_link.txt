@@ -16,3 +16,10 @@ https://hal.archives-ouvertes.fr/hal-00756747/document
 https://yanpanlau.github.io/2016/10/11/Torcs-Keras.html
 https://arxiv.org/pdf/1706.01905.pdf
 
+softmax actor-critic
+https://mpatacchiola.github.io/blog/2017/02/11/dissecting-reinforcement-learning-4.html
+https://github.com/rlcode/reinforcement-learning/blob/master/3-atari/1-breakout/breakout_a3c.py
+https://towardsdatascience.com/policy-based-reinforcement-learning-the-easy-way-8de9a3356083
+https://pdfs.semanticscholar.org/fdb7/3ba90587717d15c81929f622730fb5829445.pdf
+https://github.com/haarnoja/sac
+
