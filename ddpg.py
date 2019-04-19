@@ -275,6 +275,8 @@ def train(sess, dut, args, actor, critic, actor_noise, do_merge, n_inputs, n_sta
         best_episode_states = []
         episode_states = []
 
+        print ("pred[0] = ", actor.predict( np.reshape(0, (1, actor.s_dim))))
+
         for j in range(int(args['max_episode_len'])):
             episode_states.append(s)
 

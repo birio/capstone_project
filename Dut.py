@@ -67,6 +67,11 @@ class Dut:
           self.tot_coverage = self.tot_coverage + 1
       print("tot_coverage = ", self.tot_coverage)
 
+      print("DUT[0]: ", self.DUT[0])
+      for i in self.DUT[0]:
+         print("COMB[(0, ", i, ")] = ", self.COMB[(0, i)])
+
+      pdb.set_trace()
 
       # self.classes_f = open("classes.dat", "w")
       # with open("classes.dat") as classes_f:
@@ -76,7 +81,7 @@ class Dut:
       #    self.classes_f.write("\n")
       #    self.classes_f.write(repr(self.COMB))
       # self.classes_f.closed
-      
+
 
    # next_state, reward, done = dut.step(state, action)
 
