@@ -266,6 +266,8 @@ def train(sess, dut, args, actor, critic, actor_noise, do_merge, n_inputs, n_sta
 
     for i in range(int(args['max_episodes'])):
 
+        counter = np.zeros(n_inputs)
+        rew     = np.zeros(n_inputs)
         n_comb = dut.n_comb
         s = dut.reset(do_merge)
 
@@ -275,14 +277,14 @@ def train(sess, dut, args, actor, critic, actor_noise, do_merge, n_inputs, n_sta
         best_episode_states = []
         episode_states = []
 
-        print ("pred[0] = ", actor.predict( np.reshape(0, (1, actor.s_dim))))
-
         for j in range(int(args['max_episode_len'])):
             episode_states.append(s)
 
             # get the proto_action's k nearest neighbors
             # actions = self.action_space.search_point(proto_action, k_nearest_neighbors)[0] # TODO efficient knn : closest in value, or in probability to being chosen?
 
+
+            # TODO: print randomness ratio
             # REVISIT is it ok?
             rnd_action = np.random.choice(np.arange(n_inputs))
             eps = 1./(1+(float(args['max_episode_len'])*i + j)/250000)
@@ -333,10 +335,19 @@ def train(sess, dut, args, actor, critic, actor_noise, do_merge, n_inputs, n_sta
                 a_outs = actor.predict(s_batch)
                 grads = critic.action_gradients(s_batch, np.array([[np.argmax(a_outs)]]))
                 actor.train(s_batch, grads[0])
+                # pdb.set_trace()
 
                 # Update target networks
                 actor.update_target_network()
                 critic.update_target_network()
+
+                for x in range(0, len(s_batch)):
+                   if(s_batch[x]==0):
+                      y = a_batch[x]
+                      counter[y] = counter[y] + 1 
+                      rew[y] = rew[y] + r_batch[x]
+
+               
 
             s = s2
             ep_reward += r
@@ -352,7 +363,10 @@ def train(sess, dut, args, actor, critic, actor_noise, do_merge, n_inputs, n_sta
                 writer.add_summary(summary_str, i)
                 writer.flush()
 
-                print('| Coverage: {:.4f} ({:d}/{:d}) | Reward: {:.4f} | Episode: {:d} | Qmax: {:.4f}'.format(dut.coverage, int(dut.coverage*dut.tot_coverage), dut.tot_coverage, ep_reward, \
+                print ("pred[0] = ", actor.predict( np.reshape(0, (1, actor.s_dim))))
+                print(counter)
+                print(rew)
+                print('| Coverage: {:.4f} ({:d}/{:d}) | Reward: {:.1f} | Episode: {:d} | Qmax: {:.4f}'.format(dut.coverage, int(dut.coverage*dut.tot_coverage), dut.tot_coverage, ep_reward, \
                         i, (ep_ave_max_q / float(j))))
                 break
 
@@ -430,3 +444,7 @@ if __name__ == '__main__':
     # TODO reward: hidden state
     # TODO reward: big end reward
     # TODO what if Qmax explose?
+    # TODO gamma=0
+    # TODO random with minarg with threshold
+    # TODO continuous tasks
+    # TODO train with balanced actions
