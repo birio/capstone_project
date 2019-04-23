@@ -10,6 +10,7 @@ import argparse
 import pprint as pp
 
 from replay_buffer import ReplayBuffer
+np.set_printoptions(precision=4)
 
 # ===========================
 #   Actor and Critic DNNs
