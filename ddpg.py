@@ -286,31 +286,38 @@ def train(sess, dut, args, actor, critic, actor_noise, do_merge, n_inputs, n_sta
 
             # TODO: print randomness ratio
             # REVISIT is it ok?
-            rnd_action = np.random.choice(np.arange(n_inputs))
-            eps = 1./(1+(float(args['max_episode_len'])*i + j)/250000)
-            if (np.random.random() < eps):
-               proto_action = np.array([[rnd_action]])
-            else:
-               proto_action = np.array([[np.argmax(actor.predict( np.reshape(s, (1, actor.s_dim))) )]])
+            # rnd_action = np.random.choice(np.arange(n_inputs))
+            # eps = 1./(1+(float(args['max_episode_len'])*i + j)/250000)
+            # if (np.random.random() < eps):
+            #    proto_action = np.array([[rnd_action]])
+            # else:
+            #    proto_action = np.array([[np.argmax(actor.predict( np.reshape(s, (1, actor.s_dim))) )]])
 
-            actions = np.round(proto_action)
-            # self.data_fetch.set_ndn_action(actions[0].tolist()) # todo
-            # make all the state, action pairs for the critic
-            states = np.tile(s, [len(actions), 1])
-            # evaluate each pair through the critic
-            actions_evaluation = critic.predict_target(states, actions)
-            # find the index of the pair with the maximum value
-            max_index = np.argmax(actions_evaluation)
-            a = actions[max_index]
+            probs = actor.predict( np.reshape(s, (1, actor.s_dim)))
+            probs = np.reshape(probs, (n_inputs, ))
+            proto_action = np.random.choice(n_inputs, p = probs ) 
+
+            a = proto_action
+
+            # actions = np.round(proto_action)
+            # # self.data_fetch.set_ndn_action(actions[0].tolist()) # todo
+            # # make all the state, action pairs for the critic
+            # states = np.tile(s, [len(actions), 1])
+            # # evaluate each pair through the critic
+            # actions_evaluation = critic.predict_target(states, actions)
+            # # find the index of the pair with the maximum value
+            # max_index = np.argmax(actions_evaluation)
+            # a = actions[max_index]
 
             s2, r, terminal = dut.step(s, a)
 
-            replay_buffer.add(np.reshape(s, (actor.s_dim,)), np.reshape(a, (actor.a_dim,)), r,
-                              terminal, np.reshape(s2, (actor.s_dim,)))
+            #         def add(self,                       s,                             a, r,        t,                             s2):
+            replay_buffer.add(np.reshape(s, (actor.s_dim,)), np.reshape(a, (actor.a_dim,)), r, terminal, np.reshape(s2, (actor.s_dim,)))
 
             # Keep adding experience to the memory until
             # there are at least minibatch size samples
             if replay_buffer.size() > int(args['minibatch_size']):
+            #   s_batch, a_batch, r_batch, t_batch, s2_batch
                 s_batch, a_batch, r_batch, t_batch, s2_batch = \
                     replay_buffer.sample_batch(int(args['minibatch_size']))
 
@@ -444,7 +451,7 @@ if __name__ == '__main__':
     # TODO reward: hidden state
     # TODO reward: big end reward
     # TODO what if Qmax explose?
-    # TODO gamma=0
+    # TODO gamma=1
     # TODO random with minarg with threshold
     # TODO continuous tasks
     # TODO train with balanced actions
