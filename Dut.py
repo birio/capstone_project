@@ -71,7 +71,6 @@ class Dut:
       for i in self.DUT[0]:
          print("COMB[(0, ", i, ")] = ", self.COMB[(0, i)])
 
-      pdb.set_trace()
 
       # self.classes_f = open("classes.dat", "w")
       # with open("classes.dat") as classes_f:
@@ -88,8 +87,7 @@ class Dut:
    def step(self, state, action):
       state_array = self.DUT[state]
       next_state = state
-      # reward = -1
-      reward = -0.1
+      reward = -1
       for i in state_array:
          if self.COMB[(state, i)] == action:
             self.states_covered[i]=1
