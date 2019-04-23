@@ -22,4 +22,9 @@ https://github.com/rlcode/reinforcement-learning/blob/master/3-atari/1-breakout/
 https://towardsdatascience.com/policy-based-reinforcement-learning-the-easy-way-8de9a3356083
 https://pdfs.semanticscholar.org/fdb7/3ba90587717d15c81929f622730fb5829445.pdf
 https://github.com/haarnoja/sac
+https://arxiv.org/abs/1801.01290
+
+continuous tasks
+https://www.quora.com/How-can-I-distinguish-between-episodic-and-continuous-tasks
+https://arxiv.org/pdf/1810.06746.pdf
 
