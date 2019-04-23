@@ -280,50 +280,25 @@ def train(sess, dut, args, actor, critic, actor_noise, do_merge, n_inputs, n_sta
         for j in range(int(args['max_episode_len'])):
             episode_states.append(s)
 
-            # get the proto_action's k nearest neighbors
-            # actions = self.action_space.search_point(proto_action, k_nearest_neighbors)[0] # TODO efficient knn : closest in value, or in probability to being chosen?
-
-
-            # TODO: print randomness ratio
-            # REVISIT is it ok?
-            # rnd_action = np.random.choice(np.arange(n_inputs))
-            # eps = 1./(1+(float(args['max_episode_len'])*i + j)/250000)
-            # if (np.random.random() < eps):
-            #    proto_action = np.array([[rnd_action]])
-            # else:
-            #    proto_action = np.array([[np.argmax(actor.predict( np.reshape(s, (1, actor.s_dim))) )]])
-
-            probs = actor.predict( np.reshape(s, (1, actor.s_dim)))
+            probs = actor.predict( np.reshape(s, (1, actor.s_dim))) # TODO is reshape useful here?
             probs = np.reshape(probs, (n_inputs, ))
             proto_action = np.random.choice(n_inputs, p = probs ) 
 
             a = proto_action
-
-            # actions = np.round(proto_action)
-            # # self.data_fetch.set_ndn_action(actions[0].tolist()) # todo
-            # # make all the state, action pairs for the critic
-            # states = np.tile(s, [len(actions), 1])
-            # # evaluate each pair through the critic
-            # actions_evaluation = critic.predict_target(states, actions)
-            # # find the index of the pair with the maximum value
-            # max_index = np.argmax(actions_evaluation)
-            # a = actions[max_index]
-
             s2, r, terminal = dut.step(s, a)
 
-            #         def add(self,                       s,                             a, r,        t,                             s2):
-            replay_buffer.add(np.reshape(s, (actor.s_dim,)), np.reshape(a, (actor.a_dim,)), r, terminal, np.reshape(s2, (actor.s_dim,)))
+            # replay_buffer.add(np.reshape(s, (actor.s_dim,)), np.reshape(a, (actor.a_dim,)), r, terminal, np.reshape(s2, (actor.s_dim,)))
+            replay_buffer.add(np.reshape(s, (actor.s_dim,)), probs, r, terminal, np.reshape(s2, (actor.s_dim,)))
 
             # Keep adding experience to the memory until
             # there are at least minibatch size samples
             if replay_buffer.size() > int(args['minibatch_size']):
-            #   s_batch, a_batch, r_batch, t_batch, s2_batch
                 s_batch, a_batch, r_batch, t_batch, s2_batch = \
                     replay_buffer.sample_batch(int(args['minibatch_size']))
 
                 # Calculate targets
                 target_q = critic.predict_target(
-                    s2_batch, np.array([[np.argmax(actor.predict_target(s2_batch))]]) ) #REVISIT
+                    s2_batch, actor.predict_target(s2_batch)) #REVISIT
 
                 y_i = []
                 for k in range(int(args['minibatch_size'])):
@@ -340,7 +315,7 @@ def train(sess, dut, args, actor, critic, actor_noise, do_merge, n_inputs, n_sta
 
                 # Update the actor policy using the sampled gradient
                 a_outs = actor.predict(s_batch)
-                grads = critic.action_gradients(s_batch, np.array([[np.argmax(a_outs)]]))
+                grads = critic.action_gradients(s_batch, a_outs)
                 actor.train(s_batch, grads[0])
                 # pdb.set_trace()
 
@@ -351,8 +326,8 @@ def train(sess, dut, args, actor, critic, actor_noise, do_merge, n_inputs, n_sta
                 for x in range(0, len(s_batch)):
                    if(s_batch[x]==0):
                       y = a_batch[x]
-                      counter[y] = counter[y] + 1 
-                      rew[y] = rew[y] + r_batch[x]
+                      # counter[y] = counter[y] + 1 
+                      # rew[y] = rew[y] + r_batch[x]
 
                
 
@@ -371,8 +346,6 @@ def train(sess, dut, args, actor, critic, actor_noise, do_merge, n_inputs, n_sta
                 writer.flush()
 
                 print ("pred[0] = ", actor.predict( np.reshape(0, (1, actor.s_dim))))
-                print(counter)
-                print(rew)
                 print('| Coverage: {:.4f} ({:d}/{:d}) | Reward: {:.1f} | Episode: {:d} | Qmax: {:.4f}'.format(dut.coverage, int(dut.coverage*dut.tot_coverage), dut.tot_coverage, ep_reward, \
                         i, (ep_ave_max_q / float(j))))
                 break
@@ -401,11 +374,11 @@ def main(args):
         # Ensure action bound is symmetric
         # assert (env.action_space.high == -env.action_space.low)
 
-        actor = ActorNetwork(sess, state_dim, action_dim, action_bound,
+        actor = ActorNetwork(sess, state_dim, N_INPUTS, action_bound,
                              float(args['actor_lr']), float(args['tau']),
                              int(args['minibatch_size']))
 
-        critic = CriticNetwork(sess, state_dim, action_dim,
+        critic = CriticNetwork(sess, state_dim, N_INPUTS,
                                float(args['critic_lr']), float(args['tau']),
                                float(args['gamma']),
                                actor.get_num_trainable_vars())
@@ -451,7 +424,9 @@ if __name__ == '__main__':
     # TODO reward: hidden state
     # TODO reward: big end reward
     # TODO what if Qmax explose?
-    # TODO gamma=1
+    # TODO gamma=0
+    # TODO tau
     # TODO random with minarg with threshold
     # TODO continuous tasks
     # TODO train with balanced actions
+    # TODO add invalid ending state
