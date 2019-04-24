@@ -80,7 +80,8 @@ class ActorNetwork(object):
         # out = tflearn.fully_connected(
         #     net, self.a_dim, activation='tanh', weights_init=w_init)
         # Scale output to 0 to action_bound-1
-        scaled_out = tflearn.fully_connected(out, self.action_bound, activation="softmax")
+        # scaled_out = tflearn.fully_connected(out, self.action_bound, activation="linear")
+        scaled_out = tflearn.fully_connected(out, self.action_bound, activation="relu")
         # scaled_out = ((self.action_bound-1)/2) + tf.multiply(out, (self.action_bound-1)/2)
         return inputs, out, scaled_out
 
@@ -283,13 +284,22 @@ def train(sess, dut, args, actor, critic, actor_noise, do_merge, n_inputs, n_sta
 
             probs = actor.predict( np.reshape(s, (1, actor.s_dim))) # TODO is reshape useful here?
             probs = np.reshape(probs, (n_inputs, ))
-            proto_action = np.random.choice(n_inputs, p = probs ) 
+            train_probs = probs
+            if (not probs.any() or sum(probs) == 0):
+               a = np.random.choice(n_inputs )
+            else:
+               # probs = np.array([(1+i) for i in probs]) # clamp prob < 0
+               probs = [i/sum(probs) for i in probs]
+               proto_action = np.random.choice(n_inputs, p = probs )
+               if (not np.array(probs).any()):
+                  a = np.random.choice(n_inputs )
+               else:
+                  a = proto_action
 
-            a = proto_action
             s2, r, terminal = dut.step(s, a)
 
             # replay_buffer.add(np.reshape(s, (actor.s_dim,)), np.reshape(a, (actor.a_dim,)), r, terminal, np.reshape(s2, (actor.s_dim,)))
-            replay_buffer.add(np.reshape(s, (actor.s_dim,)), probs, r, terminal, np.reshape(s2, (actor.s_dim,)))
+            replay_buffer.add(np.reshape(s, (actor.s_dim,)), train_probs, r, terminal, np.reshape(s2, (actor.s_dim,)))
 
             # Keep adding experience to the memory until
             # there are at least minibatch size samples
@@ -346,6 +356,7 @@ def train(sess, dut, args, actor, critic, actor_noise, do_merge, n_inputs, n_sta
                 writer.add_summary(summary_str, i)
                 writer.flush()
 
+                print ("pred[0] = ", np.argsort(actor.predict( np.reshape(0, (1, actor.s_dim)))))
                 print ("pred[0] = ", actor.predict( np.reshape(0, (1, actor.s_dim))))
                 print('| Coverage: {:.4f} ({:d}/{:d}) | Reward: {:.1f} | Episode: {:d} | Qmax: {:.4f}'.format(dut.coverage, int(dut.coverage*dut.tot_coverage), dut.tot_coverage, ep_reward, \
                         i, (ep_ave_max_q / float(j))))
@@ -431,3 +442,4 @@ if __name__ == '__main__':
     # TODO continuous tasks
     # TODO train with balanced actions
     # TODO add invalid ending state
+    # TODO what's the max possible coverage for an episode?
