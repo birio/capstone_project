@@ -76,13 +76,8 @@ class ActorNetwork(object):
         out = tflearn.layers.normalization.batch_normalization(out)
         out = tflearn.activations.relu(out)
         # Final layer weights are init to Uniform[-3e-3, 3e-3]
-        # w_init = tflearn.initializations.uniform(minval=-0.003, maxval=0.003)
-        # out = tflearn.fully_connected(
-        #     net, self.a_dim, activation='tanh', weights_init=w_init)
-        # Scale output to 0 to action_bound-1
-        # scaled_out = tflearn.fully_connected(out, self.action_bound, activation="linear")
-        scaled_out = tflearn.fully_connected(out, self.action_bound, activation="relu")
-        # scaled_out = ((self.action_bound-1)/2) + tf.multiply(out, (self.action_bound-1)/2)
+        # w_init = tflearn.initializations.uniform(minval=-0.003, maxval=0.003) # TODO
+        scaled_out = tflearn.fully_connected(out, self.action_bound, activation="sigmoid")
         return inputs, out, scaled_out
 
     def train(self, inputs, a_gradient):
@@ -295,8 +290,10 @@ def train(sess, dut, args, actor, critic, actor_noise, do_merge, n_inputs, n_sta
                   a = np.random.choice(n_inputs )
                else:
                   a = proto_action
-
+            
             s2, r, terminal = dut.step(s, a)
+            train_probs = n_inputs * [0]
+            train_probs[a] = 1
 
             # replay_buffer.add(np.reshape(s, (actor.s_dim,)), np.reshape(a, (actor.a_dim,)), r, terminal, np.reshape(s2, (actor.s_dim,)))
             replay_buffer.add(np.reshape(s, (actor.s_dim,)), train_probs, r, terminal, np.reshape(s2, (actor.s_dim,)))
@@ -306,6 +303,8 @@ def train(sess, dut, args, actor, critic, actor_noise, do_merge, n_inputs, n_sta
             if replay_buffer.size() > int(args['minibatch_size']):
                 s_batch, a_batch, r_batch, t_batch, s2_batch = \
                     replay_buffer.sample_batch(int(args['minibatch_size']))
+
+                # pdb.set_trace()
 
                 # Calculate targets
                 target_q = critic.predict_target(
@@ -413,7 +412,7 @@ if __name__ == '__main__':
     parser.add_argument('--gamma', help='discount factor for critic updates', default=0.99)
     parser.add_argument('--tau', help='soft target update parameter', default=0.001)
     parser.add_argument('--buffer-size', help='max size of the replay buffer', default=1000000)
-    parser.add_argument('--minibatch-size', help='size of minibatch for minibatch-SGD', default=64)
+    parser.add_argument('--minibatch-size', help='size of minibatch for minibatch-SGD', default=1)
 
     # run parameters
     parser.add_argument('--random-seed', help='random seed for repeatability', default=42)
