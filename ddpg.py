@@ -25,10 +25,11 @@ class ActorNetwork(object):
     between -action_bound and action_bound
     """
 
-    def __init__(self, sess, state_dim, action_dim, action_bound, learning_rate, tau, batch_size):
+    def __init__(self, sess, state_dim, state_bound, action_dim, action_bound, learning_rate, tau, batch_size):
         self.sess = sess
         self.s_dim = state_dim
         self.a_dim = action_dim
+        self.state_bound = state_bound
         self.action_bound = action_bound
         self.learning_rate = learning_rate
         self.tau = tau
@@ -69,6 +70,7 @@ class ActorNetwork(object):
 
     def create_actor_network(self):
         inputs = tflearn.input_data(shape=[None, self.s_dim])
+        inputs_one_hot = tflearn.layers.core.one_hot_encoding(inputs, self.state_bound)
         net = tflearn.fully_connected(inputs, 400)
         net = tflearn.layers.normalization.batch_normalization(net)
         net = tflearn.activations.relu(net)
@@ -110,9 +112,10 @@ class CriticNetwork(object):
 
     """
 
-    def __init__(self, sess, state_dim, action_dim, learning_rate, tau, gamma, num_actor_vars):
+    def __init__(self, sess, state_dim, state_bound, action_dim, learning_rate, tau, gamma, num_actor_vars):
         self.sess = sess
         self.s_dim = state_dim
+        self.state_bound = state_bound
         self.a_dim = action_dim
         self.learning_rate = learning_rate
         self.tau = tau
@@ -152,6 +155,7 @@ class CriticNetwork(object):
 
     def create_critic_network(self):
         inputs = tflearn.input_data(shape=[None, self.s_dim])
+        inputs_one_hot = tflearn.layers.core.one_hot_encoding(inputs, self.state_bound)
         action = tflearn.input_data(shape=[None, self.a_dim])
         net = tflearn.fully_connected(inputs, 400)
         net = tflearn.layers.normalization.batch_normalization(net)
@@ -385,11 +389,11 @@ def main(args):
         # Ensure action bound is symmetric
         # assert (env.action_space.high == -env.action_space.low)
 
-        actor = ActorNetwork(sess, state_dim, N_INPUTS, action_bound,
+        actor = ActorNetwork(sess, state_dim, N_STATES, N_INPUTS, action_bound,
                              float(args['actor_lr']), float(args['tau']),
                              int(args['minibatch_size']))
 
-        critic = CriticNetwork(sess, state_dim, N_INPUTS,
+        critic = CriticNetwork(sess, state_dim, N_STATES, N_INPUTS,
                                float(args['critic_lr']), float(args['tau']),
                                float(args['gamma']),
                                actor.get_num_trainable_vars())
