@@ -71,7 +71,7 @@ class ActorNetwork(object):
     def create_actor_network(self):
         inputs = tflearn.input_data(shape=[None, self.s_dim])
         inputs_one_hot = tflearn.layers.core.one_hot_encoding(inputs, self.state_bound)
-        net = tflearn.fully_connected(inputs, 400)
+        net = tflearn.fully_connected(inputs_one_hot, 400)
         net = tflearn.layers.normalization.batch_normalization(net)
         net = tflearn.activations.relu(net)
         out = tflearn.fully_connected(net, 300)
@@ -157,7 +157,7 @@ class CriticNetwork(object):
         inputs = tflearn.input_data(shape=[None, self.s_dim])
         inputs_one_hot = tflearn.layers.core.one_hot_encoding(inputs, self.state_bound)
         action = tflearn.input_data(shape=[None, self.a_dim])
-        net = tflearn.fully_connected(inputs, 400)
+        net = tflearn.fully_connected(inputs_one_hot, 400)
         net = tflearn.layers.normalization.batch_normalization(net)
         net = tflearn.activations.relu(net)
 
@@ -293,6 +293,8 @@ def train(sess, dut, args, actor, critic, actor_noise, do_merge, n_inputs, n_sta
             probs[a]=1
 
             s2, r, terminal = dut.step(s, a)
+
+            # print("s = ", s, ", a = ", a, "r = ", r)
 
             replay_buffer.add(np.reshape(s, (actor.s_dim,)), probs, r, terminal, np.reshape(s2, (actor.s_dim,)))
 
