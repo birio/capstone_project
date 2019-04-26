@@ -282,16 +282,14 @@ def train(sess, dut, args, actor, critic, actor_noise, do_merge, n_inputs, n_sta
             if (not probs.any()):
                a = np.random.choice(n_inputs )
             else:
-               probs = [i/sum(probs) for i in probs]
-               proto_action = np.random.choice(n_inputs, p = probs )
+               a_probs = [i/sum(probs) for i in probs]
+               proto_action = np.random.choice(n_inputs, p = a_probs )
                a = proto_action
+               probs[a]=1
 
             s2, r, terminal = dut.step(s, a)
-            train_probs = [np.absolute(actor_noise()) for _ in probs]
-            train_probs[a] = np.array([1])
 
-            # replay_buffer.add(np.reshape(s, (actor.s_dim,)), np.reshape(a, (actor.a_dim,)), r, terminal, np.reshape(s2, (actor.s_dim,)))
-            replay_buffer.add(np.reshape(s, (actor.s_dim,)), train_probs, r, terminal, np.reshape(s2, (actor.s_dim,)))
+            replay_buffer.add(np.reshape(s, (actor.s_dim,)), probs, r, terminal, np.reshape(s2, (actor.s_dim,)))
 
             # Keep adding experience to the memory until
             # there are at least minibatch size samples
@@ -302,8 +300,9 @@ def train(sess, dut, args, actor, critic, actor_noise, do_merge, n_inputs, n_sta
                 # pdb.set_trace()
 
                 # Calculate targets
+                a_pred_target = actor.predict_target(s2_batch)
                 target_q = critic.predict_target(
-                    s2_batch, actor.predict_target(s2_batch)) #REVISIT
+                    s2_batch, a_pred_target) #REVISIT
 
                 y_i = []
                 for k in range(int(args['minibatch_size'])):
@@ -330,12 +329,14 @@ def train(sess, dut, args, actor, critic, actor_noise, do_merge, n_inputs, n_sta
 
                 # for x in range(0, len(s_batch)):
                 #    if(s_batch[x]==0):
-                #       # print(a_batch[x])
-                #       # y = a_batch[x]
                 #       # counter = counter + a_batch[x]
+                #       print(a_batch[x])
+                #       print(r_batch[x])
+                #       print("Q[0][a] = ", critic.predict(np.array(0).reshape(1, 1), a_batch[x].reshape(1, 8)))
+                #       # y = a_batch[x]
                 #       # rew[y] = rew[y] + r_batch[x]
 
-                # print(counter)
+                # # print(counter)
                 # print ("train - pred[0] = ", np.argsort(actor.predict( np.reshape(0, (1, actor.s_dim)))))
                 # print ("train - pred[0] = ", actor.predict( np.reshape(0, (1, actor.s_dim))))
                
@@ -441,3 +442,4 @@ if __name__ == '__main__':
     # TODO train with balanced actions
     # TODO add invalid ending state
     # TODO what's the max possible coverage for an episode?
+    # TODO why does Q[s] change when we do not train for s ?
