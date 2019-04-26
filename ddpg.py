@@ -289,7 +289,8 @@ def train(sess, dut, args, actor, critic, actor_noise, do_merge, n_inputs, n_sta
                a_probs = [i/sum(probs) for i in probs]
                proto_action = np.random.choice(n_inputs, p = a_probs )
                a = proto_action
-               probs[a]=1
+
+            probs[a]=1
 
             s2, r, terminal = dut.step(s, a)
 
