@@ -279,21 +279,16 @@ def train(sess, dut, args, actor, critic, actor_noise, do_merge, n_inputs, n_sta
 
             probs = actor.predict( np.reshape(s, (1, actor.s_dim))) # TODO is reshape useful here?
             probs = np.reshape(probs, (n_inputs, ))
-            train_probs = probs
-            if (not probs.any() or sum(probs) == 0):
+            if (not probs.any()):
                a = np.random.choice(n_inputs )
             else:
-               # probs = np.array([(1+i) for i in probs]) # clamp prob < 0
                probs = [i/sum(probs) for i in probs]
                proto_action = np.random.choice(n_inputs, p = probs )
-               if (not np.array(probs).any()):
-                  a = np.random.choice(n_inputs )
-               else:
-                  a = proto_action
-            
+               a = proto_action
+
             s2, r, terminal = dut.step(s, a)
-            train_probs = n_inputs * [0]
-            train_probs[a] = 1
+            train_probs = [np.absolute(actor_noise()) for _ in probs]
+            train_probs[a] = np.array([1])
 
             # replay_buffer.add(np.reshape(s, (actor.s_dim,)), np.reshape(a, (actor.a_dim,)), r, terminal, np.reshape(s2, (actor.s_dim,)))
             replay_buffer.add(np.reshape(s, (actor.s_dim,)), train_probs, r, terminal, np.reshape(s2, (actor.s_dim,)))
@@ -333,12 +328,16 @@ def train(sess, dut, args, actor, critic, actor_noise, do_merge, n_inputs, n_sta
                 actor.update_target_network()
                 critic.update_target_network()
 
-                for x in range(0, len(s_batch)):
-                   if(s_batch[x]==0):
-                      y = a_batch[x]
-                      # counter[y] = counter[y] + 1 
-                      # rew[y] = rew[y] + r_batch[x]
+                # for x in range(0, len(s_batch)):
+                #    if(s_batch[x]==0):
+                #       # print(a_batch[x])
+                #       # y = a_batch[x]
+                #       # counter = counter + a_batch[x]
+                #       # rew[y] = rew[y] + r_batch[x]
 
+                # print(counter)
+                # print ("train - pred[0] = ", np.argsort(actor.predict( np.reshape(0, (1, actor.s_dim)))))
+                # print ("train - pred[0] = ", actor.predict( np.reshape(0, (1, actor.s_dim))))
                
 
             s = s2
@@ -409,10 +408,10 @@ if __name__ == '__main__':
     # agent parameters
     parser.add_argument('--actor-lr', help='actor network learning rate', default=0.0001)
     parser.add_argument('--critic-lr', help='critic network learning rate', default=0.001)
-    parser.add_argument('--gamma', help='discount factor for critic updates', default=0.99)
+    parser.add_argument('--gamma', help='discount factor for critic updates', default=0)
     parser.add_argument('--tau', help='soft target update parameter', default=0.001)
     parser.add_argument('--buffer-size', help='max size of the replay buffer', default=1000000)
-    parser.add_argument('--minibatch-size', help='size of minibatch for minibatch-SGD', default=1)
+    parser.add_argument('--minibatch-size', help='size of minibatch for minibatch-SGD', default=64)
 
     # run parameters
     parser.add_argument('--random-seed', help='random seed for repeatability', default=42)
