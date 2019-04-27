@@ -78,8 +78,8 @@ class ActorNetwork(object):
         out = tflearn.layers.normalization.batch_normalization(out)
         out = tflearn.activations.relu(out)
         # Final layer weights are init to Uniform[-3e-3, 3e-3]
-        # w_init = tflearn.initializations.uniform(minval=-0.003, maxval=0.003) # TODO
-        scaled_out = tflearn.fully_connected(out, self.action_bound, activation="sigmoid")
+        # w_init = tflearn.initializations.uniform(minval=-0.003, maxval=0.003)
+        scaled_out = tflearn.fully_connected(out, self.action_bound, activation="sigmoid") # TODO use relu
         return inputs, out, scaled_out
 
     def train(self, inputs, a_gradient):
@@ -281,7 +281,7 @@ def train(sess, dut, args, actor, critic, actor_noise, do_merge, n_inputs, n_sta
         for j in range(int(args['max_episode_len'])):
             episode_states.append(s)
 
-            probs = actor.predict( np.reshape(s, (1, actor.s_dim))) # TODO is reshape useful here?
+            probs = actor.predict( np.reshape(s, (1, actor.s_dim)))
             probs = np.reshape(probs, (n_inputs, ))
             if (not probs.any()):
                a = np.random.choice(n_inputs )
@@ -290,7 +290,7 @@ def train(sess, dut, args, actor, critic, actor_noise, do_merge, n_inputs, n_sta
                proto_action = np.random.choice(n_inputs, p = a_probs )
                a = proto_action
 
-            probs[a]=1
+            probs[a]=1 # TODO what should pass ?
 
             s2, r, terminal = dut.step(s, a)
 
@@ -362,8 +362,8 @@ def train(sess, dut, args, actor, critic, actor_noise, do_merge, n_inputs, n_sta
                 writer.add_summary(summary_str, i)
                 writer.flush()
 
-                print ("pred[0] = ", np.argsort(actor.predict( np.reshape(0, (1, actor.s_dim)))))
-                print ("pred[0] = ", actor.predict( np.reshape(0, (1, actor.s_dim))))
+                # print ("pred[0] = ", np.argsort(actor.predict( np.reshape(0, (1, actor.s_dim)))))
+                # print ("pred[0] = ", actor.predict( np.reshape(0, (1, actor.s_dim))))
                 print('| Coverage: {:.4f} ({:d}/{:d}) | Reward: {:.1f} | Episode: {:d} | Qmax: {:.4f}'.format(dut.coverage, int(dut.coverage*dut.tot_coverage), dut.tot_coverage, ep_reward, \
                         i, (ep_ave_max_q / float(j))))
                 break
@@ -416,7 +416,7 @@ if __name__ == '__main__':
     # agent parameters
     parser.add_argument('--actor-lr', help='actor network learning rate', default=0.0001)
     parser.add_argument('--critic-lr', help='critic network learning rate', default=0.001)
-    parser.add_argument('--gamma', help='discount factor for critic updates', default=0)
+    parser.add_argument('--gamma', help='discount factor for critic updates', default=0) #TODO
     parser.add_argument('--tau', help='soft target update parameter', default=0.001)
     parser.add_argument('--buffer-size', help='max size of the replay buffer', default=1000000)
     parser.add_argument('--minibatch-size', help='size of minibatch for minibatch-SGD', default=64)
