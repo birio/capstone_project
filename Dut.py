@@ -41,6 +41,7 @@ class Dut:
       self.n_inputs = n_inputs
       self.all_states_s = set()
       self.coverage = 0
+      self.prev_coverage = 0
 
       s = 0
       self.add_adj_list(max_adj_states, s)
@@ -111,9 +112,24 @@ class Dut:
             reward = 1
             if (self.comb_covered[(state, i)] == 0):
                self.comb_covered.update({(state, i): 1})
+               self.prev_coverage = self.coverage
                self.coverage = self.compute_reward(self.states_covered, self.comb_covered)
+               all_comb = True
+               for k in state_array:
+                  if (self.comb_covered[(state, k)] == 0):
+                     all_comb = False
+               if all_comb:
+                  reward = 5
             next_state = i
             break
+      if self.coverage > 0.5 and self.prev_coverage < 0.5:
+         reward = reward + 5
+      if self.coverage > 0.6 and self.prev_coverage < 0.6:
+         reward = reward + 10
+      if self.coverage > 0.7 and self.prev_coverage < 0.7:
+         reward = reward + 20
+      if self.coverage > 0.8 and self.prev_coverage < 0.8:
+         reward = reward + 100
       done          = (self.coverage == 1)
       return (next_state, reward, done)
 
