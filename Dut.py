@@ -101,10 +101,14 @@ class Dut:
 
    # next_state, reward, done = dut.step(state, action)
 
+   # TODO bonus for consecutive non negative reward
+   # TODO more bonus for target coverage
+
    def step(self, state, action):
       state_array = self.DUT[state]
       next_state = state
       reward = -1
+      self.prev_coverage = self.coverage
       for i in state_array:
          if self.COMB[(state, i)] == action:
             self.states_covered[i]=1
@@ -112,7 +116,6 @@ class Dut:
             reward = 1
             if (self.comb_covered[(state, i)] == 0):
                self.comb_covered.update({(state, i): 1})
-               self.prev_coverage = self.coverage
                self.coverage = self.compute_reward(self.states_covered, self.comb_covered)
                all_comb = True
                for k in state_array:
@@ -127,9 +130,9 @@ class Dut:
       if self.coverage > 0.6 and self.prev_coverage < 0.6:
          reward = reward + 10
       if self.coverage > 0.7 and self.prev_coverage < 0.7:
-         reward = reward + 20
-      if self.coverage > 0.8 and self.prev_coverage < 0.8:
          reward = reward + 100
+      if self.coverage > 0.8 and self.prev_coverage < 0.8:
+         reward = reward + 2000
       done          = (self.coverage == 1)
       return (next_state, reward, done)
 
