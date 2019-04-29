@@ -73,13 +73,13 @@ class ActorNetwork(object):
         inputs_one_hot = tflearn.layers.core.one_hot_encoding(inputs, self.state_bound)
         net = tflearn.fully_connected(inputs_one_hot, 400)
         net = tflearn.layers.normalization.batch_normalization(net)
-        net = tflearn.activations.relu(net)
+        net = tflearn.activations.sigmoid(net)
         out = tflearn.fully_connected(net, 300)
         out = tflearn.layers.normalization.batch_normalization(out)
-        out = tflearn.activations.relu(out)
+        out = tflearn.activations.sigmoid(out)
         # Final layer weights are init to Uniform[-3e-3, 3e-3]
         # w_init = tflearn.initializations.uniform(minval=-0.003, maxval=0.003)
-        scaled_out = tflearn.fully_connected(out, self.action_bound, activation="sigmoid") # TODO use relu
+        scaled_out = tflearn.fully_connected(out, self.action_bound, activation="sigmoid")
         return inputs, out, scaled_out
 
     def train(self, inputs, a_gradient):
@@ -290,7 +290,7 @@ def train(sess, dut, args, actor, critic, actor_noise, do_merge, n_inputs, n_sta
                proto_action = np.random.choice(n_inputs, p = a_probs )
                a = proto_action
 
-            probs[a]=1 # TODO what should pass ?
+            probs[a]=1
 
             s2, r, terminal = dut.step(s, a)
 
@@ -368,13 +368,10 @@ def train(sess, dut, args, actor, critic, actor_noise, do_merge, n_inputs, n_sta
                         i, (ep_ave_max_q / float(j))))
                 break
 
-# TODO whats the meaning of Qmax?
-
 def main(args):
 
     with tf.Session() as sess:
 
-        # TODO: for configs
         DO_MERGE = False
         N_INPUTS = 8
         N_STATES = 32
@@ -416,7 +413,7 @@ if __name__ == '__main__':
     # agent parameters
     parser.add_argument('--actor-lr', help='actor network learning rate', default=0.0001)
     parser.add_argument('--critic-lr', help='critic network learning rate', default=0.001)
-    parser.add_argument('--gamma', help='discount factor for critic updates', default=0.99) #TODO
+    parser.add_argument('--gamma', help='discount factor for critic updates', default=0.99)
     parser.add_argument('--tau', help='soft target update parameter', default=0.001)
     parser.add_argument('--buffer-size', help='max size of the replay buffer', default=1000000)
     parser.add_argument('--minibatch-size', help='size of minibatch for minibatch-SGD', default=64)
@@ -433,20 +430,12 @@ if __name__ == '__main__':
 
     main(args)
 
+    # TODO: for configs
     # TODO prints and statsa
- 
-    # TODO Q    values are initialized to zero
     # TODO put coverage in NN
     # TODO RNN
     # TODO print actions variance per episode
     # TODO reward: hidden state
-    # TODO reward: big end reward
-    # TODO what if Qmax explose?
-    # TODO gamma=0
-    # TODO tau
-    # TODO random with minarg with threshold
-    # TODO continuous tasks
-    # TODO train with balanced actions
-    # TODO add invalid ending state
     # TODO what's the max possible coverage for an episode?
-    # TODO why does Q[s] change when we do not train for s ?
+    # TODO whats the meaning of Qmax?
+

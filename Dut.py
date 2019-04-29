@@ -133,6 +133,7 @@ class Dut:
          reward = reward + 100
       if self.coverage > 0.8 and self.prev_coverage < 0.8:
          reward = reward + 2000
+      # TODO add more cases
       done          = (self.coverage == 1)
       return (next_state, reward, done)
 
