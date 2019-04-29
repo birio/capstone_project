@@ -102,7 +102,6 @@ class Dut:
    # next_state, reward, done = dut.step(state, action)
 
    # TODO bonus for consecutive non negative reward
-   # TODO more bonus for target coverage
 
    def step(self, state, action):
       state_array = self.DUT[state]
@@ -125,16 +124,26 @@ class Dut:
                   reward = 5
             next_state = i
             break
+
       if self.coverage > 0.5 and self.prev_coverage < 0.5:
          reward = reward + 5
-      if self.coverage > 0.6 and self.prev_coverage < 0.6:
+      elif self.coverage > 0.6 and self.prev_coverage < 0.6:
          reward = reward + 10
-      if self.coverage > 0.7 and self.prev_coverage < 0.7:
+      elif self.coverage > 0.7 and self.prev_coverage < 0.7:
          reward = reward + 100
-      if self.coverage > 0.8 and self.prev_coverage < 0.8:
+      elif self.coverage > 0.75 and self.prev_coverage < 0.75:
+         reward = reward + 500
+      elif self.coverage > 0.8 and self.prev_coverage < 0.8:
          reward = reward + 2000
-      # TODO add more cases
+      elif self.coverage > 0.85 and self.prev_coverage < 0.85:
+         reward = reward + 3000
+      elif self.coverage > 0.9 and self.prev_coverage < 0.9:
+         reward = reward + 5000
+      elif self.coverage > 0.95:
+         reward = reward * reward
+
       done          = (self.coverage == 1)
+
       return (next_state, reward, done)
 
    def reset(self, do_merge):
