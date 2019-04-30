@@ -66,28 +66,6 @@ class Dut:
       self.tot_coverage = len(self.states_covered)
       for key, items in self.comb_covered.items():
           self.tot_coverage = self.tot_coverage + 1
-      print("tot_coverage = ", self.tot_coverage)
-
-      print("DUT[0]: ", self.DUT[0])
-      for i in self.DUT[0]:
-         print("COMB[(0, ", i, ")] = ", self.COMB[(0, i)])
-
-      print("DUT[30]: ", self.DUT[30])
-      for i in self.DUT[30]:
-         print("COMB[(30, ", i, ")] = ", self.COMB[(30, i)])
-
-      print("DUT[15]: ", self.DUT[15])
-      for i in self.DUT[15]:
-         print("COMB[(15, ", i, ")] = ", self.COMB[(15, i)])
-
-      print("DUT[26]: ", self.DUT[26])
-      for i in self.DUT[26]:
-         print("COMB[(26, ", i, ")] = ", self.COMB[(26, i)])
-
-      print("DUT[17]: ", self.DUT[17])
-      for i in self.DUT[17]:
-         print("COMB[(17, ", i, ")] = ", self.COMB[(17, i)])
-
 
       # self.classes_f = open("classes.dat", "w")
       # with open("classes.dat") as classes_f:
