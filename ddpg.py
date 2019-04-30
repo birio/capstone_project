@@ -373,8 +373,8 @@ def main(args):
     with tf.Session() as sess:
 
         DO_MERGE = False
-        N_INPUTS = 8
-        N_STATES = 32
+        N_INPUTS = int(args['n_inputs'])
+        N_STATES = int(args['n_states'])
         k_ratio  = 0.1 # REVISIT
 
         k_nearest_neighbors = max(1, int(N_INPUTS * k_ratio))
@@ -402,10 +402,10 @@ def main(args):
 
         train(sess, dut, args, actor, critic, actor_noise, DO_MERGE, N_INPUTS, N_STATES, k_nearest_neighbors)
 
-    print(dut.states_covered)
-    print(dut.comb_covered)
-    print(dut.DUT)
-    print(dut.COMB)
+    # print(dut.states_covered)
+    # print(dut.comb_covered)
+    # print(dut.DUT)
+    # print(dut.COMB)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='provide arguments for DDPG agent')
@@ -423,6 +423,9 @@ if __name__ == '__main__':
     parser.add_argument('--max-episodes', help='max num of episodes to do while training', default=1000)
     parser.add_argument('--max-episode-len', help='max length of 1 episode', default=500)
     parser.add_argument('--summary-dir', help='directory for storing tensorboard info', default='./results/tf_ddpg')
+
+    parser.add_argument('--n-inputs', help='directory for storing tensorboard info', default='8')
+    parser.add_argument('--n-states', help='directory for storing tensorboard info', default='32')
 
     args = vars(parser.parse_args())
     
