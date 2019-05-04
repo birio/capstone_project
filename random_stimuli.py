@@ -5,11 +5,8 @@ import pdb
 import print_stats
 
 CONFIGS = [ [False,   8,   32],
-            [ True,   8,   32],
             [False,  32,  256],
-            [ True,  32,  256],
-            [False, 128, 1024],
-            [ True, 128, 1024] ]
+            [False, 128, 1024] ]
 
 for config in CONFIGS:
 
@@ -45,6 +42,7 @@ for config in CONFIGS:
            state = next_state
            step = step + 1
            if done or (step == t_max):
+              reward = dut.coverage
               print_stats.print_episode(i_episode, reward, n_comb, N_STATES, str_config)
               rewards_l.append(reward)
               if reward > best_reward:
