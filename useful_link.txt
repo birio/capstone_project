@@ -1,5 +1,6 @@
 wolpertinger
 https://github.com/jimkon/Deep-Reinforcement-Learning-in-Large-Discrete-Action-Spaces
+https://arxiv.org/pdf/1512.07679.pdf
 
 reward function definition
 //www.researchgate.net/post/What_is_the_best_Reward_function_in_Reinforcement_Learning
